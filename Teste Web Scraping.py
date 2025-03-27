@@ -1,4 +1,4 @@
-# 1 - IMPORTAÇÃO DAS BIBLIOTECAS
+# 1 - IMPORTAÇÃO DAS BIBLIOTECAS:
 
 import requests  # Realiza a requisição HTTP
 from bs4 import BeautifulSoup  #analisa o documento HTML para extrair os dados
