@@ -4,10 +4,18 @@ import requests  # Realiza a requisição HTTP
 from bs4 import BeautifulSoup  #analisa o documento HTML para extrair os dados
 import zipfile  #cria os arquivos zip com o arquivo em pdf
 import pathlib  #manipulacao de arquivos e caminho dos arquivos
+import os #acessar os caminhos de arquivos e diretórios de forma independente do sistema operacional
+
+#url do site ANS:
+url_site = "https://www.gov.br/ans/pt-br/acesso-a-informacao/participacao-da-sociedade/atualizacao-do-rol-de-procedimentos"
+
+#url do anexo I e anexo II:
+url_anexo1 = "https://www.gov.br/ans/pt-br/acesso-a-informacao/participacao-da-sociedade/atualizacao-do-rol-de-procedimentos/Anexo_I_Rol_2021RN_465.2021_RN627L.2024.pdf"
+url_anexo2 = "https://www.gov.br/ans/pt-br/acesso-a-informacao/participacao-da-sociedade/atualizacao-do-rol-de-procedimentos/Anexo_II_DUT_2021_RN_465.2021_RN628.2025_RN629.2025.pdf"
 
 # 2- FUNCAO PARA ACESSAR A PAGINA WEB E EXTRAIR OS LINKS DO PDF:
 
-def get_pdf_links(url): #envia a requisicao get para a url e retornarC! a resposta para o servidor
+def get_pdf_links(url): #envia a requisicao get para a url e retorna a resposta para o servidor
     response = requests.get(url)
     soup = BeautifulSoup(response.content, 'lxml')  #coverterte a resosta em  html para objeto para que possa ser manipulado
     pdf_links = []  #criacao de uma pasta vazia para  armazenar os links dos pdf
@@ -33,17 +41,19 @@ def download_pdfs(pdf_links, download_folder):
         pdf_path = pathlib.Path(download_folder) / pdf_name  #Cria o caminho completo do arquivo pdf salvo 
 
         #Baixa o arquivo PDF
-        response = requests.get(pdf_url)
-        with open(pdf_path, 'wb') as f:  #Abre o arquivo em modo binário para escrita
-            f.write(response.content)
-
-        pdf_paths.append(pdf_path)  #Adiciona o caminho na lista de arquivos
-
-    return pdf_paths  #Retorna a lista com os caminhos dos arquivos PDF
+        try: #funcao try-accepty caso o link falhar
+            response = requests.get(pdf_url)
+            response.raise_for_status()
+            with open(pdf_path, 'wb') as f:  #Abre o arquivo em modo binário para escrita
+                  f.write(response.content)
+            pdf_paths.append(pdf_path)  #Adiciona o caminho na lista de arquivos
+            except requests.exceptions.RequestException as e:
+            print(f"Erro ao baixar o arquvivo {pdf_url}: {e}")
+        return pdf_paths  #Retorna a lista com os caminhos dos arquivos PDF
 
 # 4- FUNCAO PARA COMPACTAR OS ARQUIVOS PDF EM UM UNICO ARQUIVO ZIP:
 
-def compress_pdfs(pdf_paths, zip_filename):
+def compactar_pdfs(pdf_paths, zip_filename):
     with zipfile.ZipFile(zip_filename, 'w') as zipf: #cria um novo arquivo zip
         for pdf in pdf_paths:
             zipf.write(pdf, arcname=pathlib.Path(pdf).name)  #Adiciona o arquivo ao ZIP sem o caminho completo
@@ -51,7 +61,7 @@ def compress_pdfs(pdf_paths, zip_filename):
 # 5- FUNÇAO PRINCIPAL PARA QUE SEJA EXECUTADO OS PROCESSOS E IMPRIMIR CADA ETAPA:
 
 def main():
-    url = "https://www.gov.br/ans/pt-br/acesso-a-informacao/participacao-dasociedade/atualizacao-do-rol-de-procedimentos"
+    url = url_site
     
     #Obter os links dos PDFs
     print("Obtendo os links dos PDFs...")
@@ -67,7 +77,7 @@ def main():
     zip_filename = "rol_procedimentos.zip"
     compress_pdfs(pdf_paths, zip_filename)
 
-    print(f"Arquivos compactados em {zip_filename}")
+    print(f"Todos os arquivos foram compactados em {zip_filename}")
 
 # 6- EXECUCAO DO CODIGO:
 
